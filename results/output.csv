@@ -1,0 +1,2 @@
+muleID,startTime,endTime,numberOfRuns,filesRead,dataVolume,documentCalls,loadDuration,getResultDuration
+0,1734091982800,1734092162889,6777,216864,50813946,325294,76565,103496

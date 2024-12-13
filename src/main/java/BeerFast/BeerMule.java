@@ -136,7 +136,6 @@ class BeerMule extends Thread {
             );
         }  catch (Exception e) {
             logger.log(Level.ERROR, "An error occurred", e);
-            e.printStackTrace();
         }
         return docID;
     }

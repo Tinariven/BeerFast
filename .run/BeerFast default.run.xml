@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="BeerFast default" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="BeerFast.BeerFast" />
+    <module name="BeerFast" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

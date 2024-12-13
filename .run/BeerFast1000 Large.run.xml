@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="BeerFast1000 Large" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="BeerFast.BeerFast" />
+    <module name="BeerFast" />
+    <option name="PROGRAM_PARAMETERS" value="1000 output1000l.csv .\Data\Data1" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="BeerFast.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

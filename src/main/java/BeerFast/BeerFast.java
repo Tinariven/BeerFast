@@ -95,7 +95,7 @@ public class BeerFast {
             try {
                 for (int i = 0; i < testDuration; i++) {
                     TimeUnit.SECONDS.sleep(1);
-                    System.out.printf("\r Seconds to complete %d", testDuration - i );
+                    System.out.printf("\r Seconds to complete %d.", testDuration - i );
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
