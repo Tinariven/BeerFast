@@ -36,3 +36,24 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# Project files
+*.jar
+
+# Doc files
+*.xlsx
+*.doc
+*.docx
+
+.shelf/
+.svn/
+.idea/
+out-idea/
+out/
+
