@@ -2,6 +2,7 @@ package BeerFast;
 
 import java.util.concurrent.Semaphore;
 
+import BeerFast.Config.Config;
 import BeerFast.Report.Report;
 import com.couchbase.client.java.json.*;
 import com.couchbase.client.java.kv.GetResult;
@@ -13,7 +14,6 @@ import org.json.JSONObject;
 import com.couchbase.client.java.Collection;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -56,9 +56,11 @@ class BeerMule extends Thread {
         isRunning = false;
     }
 
+    @SuppressWarnings("unused")
     private void executeTest(String folderPath) {
 
         File folder = new File(folderPath);
+        int getCount = Integer.parseInt(Config.prop.getProperty("test.getCount"));
 
         if (folder.isDirectory()) {
             File[] files = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));
@@ -67,33 +69,30 @@ class BeerMule extends Thread {
                     report.numberOfRuns++;
                     for (File file : files) {
                         try {
+                            if (!isRunning) { break; }
+
                             long startTime = System.currentTimeMillis();
-                            String content = new String(Files.readAllBytes(Paths.get(file.getPath())));
-                            report.dataVolume = report.dataVolume + content.length();
-                            JsonObject jsonObject = convertToCouchbaseJsonObject(new JSONObject(content)) ;
+                            String docID =  uploadDocument (collection, file, report);
 
-                            logger.debug("Mule:" + id + " File:" + report.filesRead + " " + file.getName() );
-                            report.filesRead++;
+                            if (!docID.isEmpty()) {
+                                report.filesRead++;
+                                long loadTime = System.currentTimeMillis();
 
-                            String docID = "M" + id + "ID" +  report.filesRead;
-                            MutationResult upsertResult = collection.upsert(
-                                    docID, jsonObject
-                            );
-                            long loadTime = System.currentTimeMillis();
+                                for (int i = 0; i < getCount; i++) {
+                                    if (!isRunning) { break; }
+                                    report.documentCalls++;
+                                    GetResult getResult = collection.get(docID);
+                                    // JsonObject result = getResult.contentAsObject();
+                                    // logger.debug("Mule:" + id + " Doc:" + docID + " > " + result.getString("name"));
+                                }
+                                long endTime = System.currentTimeMillis();
 
-                            for (int i = 0; i < 3; i++) {
-                                report.documentCalls++;
-                                GetResult getResult = collection.get(docID);
-                                JsonObject result = getResult.contentAsObject();
-                                logger.debug("Mule:" + id + " Doc:" + docID + " > " + result.getString("name") );
+                                report.loadDuration = report.loadDuration + (loadTime - startTime);
+                                report.getResultDuration = report.getResultDuration + (endTime - loadTime);
+
                             }
-                            long endTime = System.currentTimeMillis();
 
-                            report.loadDuration = report.loadDuration + (loadTime - startTime);
-                            report.getResultDuration = report.getResultDuration + (endTime - loadTime);
-
-
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             logger.log( Level.ERROR, "An error occurred", e);
                             e.printStackTrace();
                         }
@@ -118,6 +117,28 @@ class BeerMule extends Thread {
             couchbaseJsonObject.put(key, jsonObject.get(key));
         }
         return couchbaseJsonObject;
+    }
+
+    @SuppressWarnings("unused")
+    public static String  uploadDocument (Collection collection, File file, Report report) {
+
+        String docID ="";
+
+        try {
+            String content = new String(Files.readAllBytes(Paths.get(file.getPath())));
+            report.dataVolume = report.dataVolume + content.length();
+            JsonObject jsonObject = convertToCouchbaseJsonObject(new JSONObject(content));
+            report.filesRead++;
+            logger.debug("Mule:" + report.muleID + " File:" + report.filesRead + " " + file.getName());
+            docID = "M" + report.muleID + "ID" + report.filesRead;
+            MutationResult upsertResult = collection.upsert(
+                    docID, jsonObject
+            );
+        }  catch (Exception e) {
+            logger.log(Level.ERROR, "An error occurred", e);
+            e.printStackTrace();
+        }
+        return docID;
     }
 
 }

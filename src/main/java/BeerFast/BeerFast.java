@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import BeerFast.Config.Config;
 import BeerFast.Report.Report;
 import BeerFast.Report.ReportWriter;
 import org.apache.logging.log4j.LogManager;
@@ -19,26 +20,40 @@ public class BeerFast {
 
     //TODO: load configuration from properties
 
-    static String connectionString = "couchbase://[::1]";
-    static String username = "Administrator";
-    static String password = "Success";
-    static String bucketName = "beer-sample";
+    static String connectionString;
+    static String username;
+    static String password;
+    static String bucketName;
+    static String scopeName;
+    static String collectionName;
+
+    static Config config = new Config();
 
 
     public static void main(String[] args) throws InterruptedException {
 
-        int numOfThreads = 1;
-        String outputFileName = "output.csv";
-        String dataFolderName = ".\\Data";
+        int numOfThreads = Integer.parseInt(Config.prop.getProperty("default.numberOfThreads","1"));
+        String outputFileName = Config.prop.getProperty("default.output","output.csv");
+        String dataFolderName = Config.prop.getProperty("default.dataFolder",".\\Data");
+
+
+        System.out.println("==[Fast Beer]==");
 
         // Validate and parse command line arguments
         numOfThreads = validateNumberOfThreads(args, numOfThreads);
         outputFileName = validateFileName(args, outputFileName);
         dataFolderName = validateDataFolderName(args, dataFolderName);
 
-        // Output the values
-        System.out.println("Number of Threads: " + numOfThreads);
-        System.out.println("File Name: " + outputFileName);
+        connectionString = Config.prop.getProperty("storage.host");
+        username = Config.prop.getProperty("storage.username");
+        password = Config.prop.getProperty("storage.password");
+        bucketName = Config.prop.getProperty("storage.bucket");
+        scopeName = Config.prop.getProperty("storage.scope");
+        collectionName = Config.prop.getProperty("storage.collection");
+
+        System.out.println("Number of Threads: " + numOfThreads +
+                " Data folder: " + dataFolderName +
+                " Result file: " + outputFileName);
 
         Semaphore startSemaphore = new Semaphore(0);
         Semaphore stopSemaphore = new Semaphore(0);
@@ -51,14 +66,13 @@ public class BeerFast {
                     })
             );
 
-
             // get a bucket reference
             Bucket bucket = cluster.bucket(bucketName);
             bucket.waitUntilReady(Duration.ofSeconds(30));
 
             // get a user-defined collection reference
-            Scope scope = bucket.scope("_default");
-            Collection collection = scope.collection("_default");
+            Scope scope = bucket.scope(scopeName);
+            Collection collection = scope.collection(collectionName);
 
             // Array of workers and their outcome
             BeerMule[] mules = new BeerMule[numOfThreads];
@@ -72,20 +86,23 @@ public class BeerFast {
             }
 
             // Start all workers at once
-            System.out.println("Starting all workers..." + System.currentTimeMillis());
+            System.out.println("Starting all workers...");
             startSemaphore.release(numOfThreads);
 
+            System.out.println("Running.");
+            // Perform tests over specific period
+            int testDuration = Integer.parseInt(Config.prop.getProperty("test.duration"));
             try {
-                for (int i = 0; i < 4; i++) {
-
+                for (int i = 0; i < testDuration; i++) {
                     TimeUnit.SECONDS.sleep(1);
-                    System.out.print(".");
+                    System.out.printf("\r Seconds to complete %d", testDuration - i );
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 System.out.println("Thread was interrupted.");
             }
-            System.out.println("Stopping all workers..." + System.currentTimeMillis());
+            System.out.print("\n" );
+            System.out.println("Stopping all workers..." );
 
             for (int i = 0; i < numOfThreads; i++) {
                 mules[i].stopRunning();
@@ -97,7 +114,10 @@ public class BeerFast {
 
             cluster.disconnect();
 
+            System.out.println("Saving results.");
             ReportWriter.writeReportCSV(outputFileName, List.of(reports));
+
+            System.out.println("Done.");
 
     }
 
