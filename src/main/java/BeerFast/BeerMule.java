@@ -42,7 +42,10 @@ class BeerMule extends Thread {
             startSemaphore.acquire();
             logger.info("Mule " + id + " started.");
             report.startTime = System.currentTimeMillis();
-            executeTest(report.dataFolder);
+           //  executeTest(report.dataFolder);
+            // TO DO
+            executeTest("",0);
+
             report.endTime = System.currentTimeMillis();
             logger.info("Mule " + id + " finished work in " +  (report.endTime - report.startTime)/1000 + "s "  );
             stopSemaphore.release();
@@ -57,10 +60,9 @@ class BeerMule extends Thread {
     }
 
     @SuppressWarnings("unused")
-    private void executeTest(String folderPath) {
+    private void executeTest(String folderPath, int getCount) {
 
         File folder = new File(folderPath);
-        int getCount = Integer.parseInt(Config.prop.getProperty("test.getCount"));
 
         if (folder.isDirectory()) {
             File[] files = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));

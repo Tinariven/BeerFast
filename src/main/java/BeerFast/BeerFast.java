@@ -6,82 +6,55 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import BeerFast.Config.Config;
+import BeerFast.DatabaseConnection.CouchBaseConnection;
+import BeerFast.DatabaseConnection.DatabaseConnectionIfc;
 import BeerFast.Report.Report;
 import BeerFast.Report.ReportWriter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
-import com.couchbase.client.java.*;
+
 
 public class BeerFast {
 
     private static final Logger logger = LogManager.getLogger(BeerFast.class);
 
-    //TODO: load configuration from properties
-
-    static String connectionString;
-    static String username;
-    static String password;
-    static String bucketName;
-    static String scopeName;
-    static String collectionName;
-
-    static Config config = new Config();
-
-
     public static void main(String[] args) throws InterruptedException {
 
-        int numOfThreads = Integer.parseInt(Config.prop.getProperty("default.numberOfThreads","1"));
-        String outputFileName = Config.prop.getProperty("default.output","output.csv");
-        String dataFolderName = Config.prop.getProperty("default.dataFolder",".\\Data");
-
+       //  int numOfThreads = Integer.parseInt(Config.prop.getProperty("default.numberOfThreads","1"));
+       // String outputFileName = Config.prop.getProperty("default.output","output.csv");
+       // String dataFolderName = Config.prop.getProperty("default.dataFolder",".\\Data");
 
         System.out.println("==[Fast Beer]==");
+        Config config = Config.getConfig();
 
         // Validate and parse command line arguments
-        numOfThreads = validateNumberOfThreads(args, numOfThreads);
-        outputFileName = validateFileName(args, outputFileName);
-        dataFolderName = validateDataFolderName(args, dataFolderName);
+        config.setNumOfThreads(validateNumberOfThreads(args, config.getNumOfThreads()));
+        config.setOutputFileName(validateFileName(args, config.getOutputFileName()));
+        config.setDataFolderName(validateDataFolderName(args,config.getDataFolderName()));
 
-        connectionString = Config.prop.getProperty("storage.host");
-        username = Config.prop.getProperty("storage.username");
-        password = Config.prop.getProperty("storage.password");
-        bucketName = Config.prop.getProperty("storage.bucket");
-        scopeName = Config.prop.getProperty("storage.scope");
-        collectionName = Config.prop.getProperty("storage.collection");
+        System.out.println("Number of Threads: " + config.getNumOfThreads() +
+                " Data folder: " + config.getDataFolderName() +
+                " Result file: " + config.getOutputFileName());
 
-        System.out.println("Number of Threads: " + numOfThreads +
-                " Data folder: " + dataFolderName +
-                " Result file: " + outputFileName);
+        // Prepare connection and prepare the Couchbase collection
+        CouchBaseConnection connection = CouchBaseConnection.getInstance();
 
+        // Prepare threads
         Semaphore startSemaphore = new Semaphore(0);
         Semaphore stopSemaphore = new Semaphore(0);
 
-        // prepare the Couchbase collection
-
-            Cluster cluster = Cluster.connect(
-                    connectionString,
-                    ClusterOptions.clusterOptions(username, password).environment(env -> {
-                    })
-            );
-
-            // get a bucket reference
-            Bucket bucket = cluster.bucket(bucketName);
-            bucket.waitUntilReady(Duration.ofSeconds(30));
-
-            // get a user-defined collection reference
-            Scope scope = bucket.scope(scopeName);
-            Collection collection = scope.collection(collectionName);
+        int numOfThreads = config.getNumOfThreads();
 
             // Array of workers and their outcome
             BeerMule[] mules = new BeerMule[numOfThreads];
             Report[] reports = new Report[numOfThreads];
 
-            for (int i = 0; i < numOfThreads; i++) {
+            for (int i = 0; i <  numOfThreads; i++) {
                 reports[i] = new Report();
-                reports[i].dataFolder = dataFolderName;
-                mules[i] = new BeerMule(i, collection, startSemaphore, stopSemaphore, reports[i]);
+                reports[i].dataFolder = config.getDataFolderName();
+                mules[i] = new BeerMule(i, connection.getConnection(), startSemaphore, stopSemaphore, reports[i]);
                 mules[i].start();
             }
 
@@ -91,7 +64,7 @@ public class BeerFast {
 
             System.out.println("Running.");
             // Perform tests over specific period
-            int testDuration = Integer.parseInt(Config.prop.getProperty("test.duration"));
+            int testDuration = config.getTestDuration();
             try {
                 for (int i = 0; i < testDuration; i++) {
                     TimeUnit.SECONDS.sleep(1);
@@ -112,10 +85,10 @@ public class BeerFast {
             }
             System.out.println("All workers have finished.");
 
-            cluster.disconnect();
+            connection.disconnect();
 
             System.out.println("Saving results.");
-            ReportWriter.writeReportCSV(outputFileName, List.of(reports));
+            ReportWriter.writeReportCSV(config.getOutputFileName(), List.of(reports));
 
             System.out.println("Done.");
 
