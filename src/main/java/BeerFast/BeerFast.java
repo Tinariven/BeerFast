@@ -1,20 +1,16 @@
 package BeerFast;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
 import BeerFast.Config.Config;
 import BeerFast.DatabaseConnection.CouchBaseConnection;
-import BeerFast.DatabaseConnection.DatabaseConnectionIfc;
-import BeerFast.Report.Report;
+import BeerFast.Report.ReportIfc;
 import BeerFast.Report.ReportWriter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 public class BeerFast {
 
@@ -22,14 +18,12 @@ public class BeerFast {
 
     public static void main(String[] args) throws InterruptedException {
 
-       //  int numOfThreads = Integer.parseInt(Config.prop.getProperty("default.numberOfThreads","1"));
-       // String outputFileName = Config.prop.getProperty("default.output","output.csv");
-       // String dataFolderName = Config.prop.getProperty("default.dataFolder",".\\Data");
-
         System.out.println("==[Fast Beer]==");
+        // Read and prepare configuration
         Config config = Config.getConfig();
 
         // Validate and parse command line arguments
+        // update configuration with command line parameters
         config.setNumOfThreads(validateNumberOfThreads(args, config.getNumOfThreads()));
         config.setOutputFileName(validateFileName(args, config.getOutputFileName()));
         config.setDataFolderName(validateDataFolderName(args,config.getDataFolderName()));
@@ -48,13 +42,10 @@ public class BeerFast {
         int numOfThreads = config.getNumOfThreads();
 
             // Array of workers and their outcome
-            BeerMule[] mules = new BeerMule[numOfThreads];
-            Report[] reports = new Report[numOfThreads];
+            MuleIfc[] mules = new MuleIfc[numOfThreads];
 
             for (int i = 0; i <  numOfThreads; i++) {
-                reports[i] = new Report();
-                reports[i].dataFolder = config.getDataFolderName();
-                mules[i] = new BeerMule(i, connection.getConnection(), startSemaphore, stopSemaphore, reports[i]);
+                mules[i] = new BeerMule(i, connection.getConnection(), config, startSemaphore, stopSemaphore );
                 mules[i].start();
             }
 
@@ -77,9 +68,11 @@ public class BeerFast {
             System.out.print("\n" );
             System.out.println("Stopping all workers..." );
 
+            // stopping tests for each worker
             for (int i = 0; i < numOfThreads; i++) {
                 mules[i].stopRunning();
             }
+
             for (int i = 0; i < numOfThreads; i++) {
                 stopSemaphore.acquire();
             }
@@ -88,7 +81,12 @@ public class BeerFast {
             connection.disconnect();
 
             System.out.println("Saving results.");
-            ReportWriter.writeReportCSV(config.getOutputFileName(), List.of(reports));
+            List<ReportIfc> results = new ArrayList<ReportIfc>();
+            for (int i = 0; i < numOfThreads; i++) {
+                 results.add(mules[i].getResult());
+             }
+
+            ReportWriter.writeReportCSV(config.getOutputFileName(), results);
 
             System.out.println("Done.");
 

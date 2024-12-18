@@ -9,12 +9,8 @@ import java.time.Duration;
 
 
 public class CouchBaseConnection implements DatabaseConnectionIfc{
-    private static CouchBaseConnection instance;
+    private static volatile CouchBaseConnection instance;
 
-
-    private  String bucketName;
-    private  String scopeName;
-    private  String collectionName;
 
     private Cluster cluster;
     private Bucket bucket;
@@ -36,11 +32,9 @@ public class CouchBaseConnection implements DatabaseConnectionIfc{
             // connect to cluster
            this.cluster = Cluster.connect(
                     connectionString,
-                    ClusterOptions.clusterOptions(username, password).environment(env -> {
-                    })
+                    ClusterOptions.clusterOptions(username, password).environment(env -> {} )
             );
             // get a bucket reference
-            // TO DO - null pointer on cluster
             this.bucket = cluster.bucket(bucketName);
             this.bucket.waitUntilReady(Duration.ofSeconds(30));
             // get a user-defined collection reference
@@ -49,7 +43,6 @@ public class CouchBaseConnection implements DatabaseConnectionIfc{
 
         } catch ( CouchbaseException e) {
             logger.error("Error connecting to CouchBase instance" + e.getMessage());
-            throw new CouchbaseException(e);
         }
     }
 

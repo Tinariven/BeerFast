@@ -14,16 +14,15 @@ public class ReportWriter {
     private static final Logger logger = LogManager.getLogger(ReportWriter.class);
     private static final String CSV_HEADER = "muleID,startTime,endTime,numberOfRuns,filesRead,dataVolume,documentCalls,loadDuration,getResultDuration";
 
-    public static void writeReportCSV(String fileName, List<Report> reports) {
+    public static void writeReportCSV(String fileName, List<ReportIfc> reports) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
             // Write CSV header
             writer.println(CSV_HEADER);
 
             // Write data
-            for (Report report : reports) {
-                writer.printf("%d,%d,%d,%d,%d,%d,%d,%d,%d%n",
-                        report.muleID, report.startTime,report.endTime,report.numberOfRuns,report.filesRead,report.dataVolume,report.documentCalls,report.loadDuration,report.getResultDuration);
-            }
+            for (ReportIfc report : reports) {
+                writer.println(report.print());
+              }
 
             System.out.println("Report "+fileName+" created successfully.");
         } catch (IOException e) {

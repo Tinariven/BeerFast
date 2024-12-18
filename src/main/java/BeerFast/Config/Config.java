@@ -1,7 +1,6 @@
 package BeerFast.Config;
 
 import BeerFast.BeerFast;
-import BeerFast.DatabaseConnection.CouchBaseConnection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -11,12 +10,12 @@ import java.util.Properties;
 
 public final class Config {
 
-    private static Config instance;
+    private static volatile Config instance;
     private static final String PROPERTIES_FILE = "application.properties";
     private static final Logger logger = LogManager.getLogger(Config.class);
     private static final Properties prop = new Properties();
 
-    private int numOfThreads = 1;
+    private int numOfThreads;
     private String dataFolderName;
     private String outputFileName;
     private String connectionString;
@@ -26,7 +25,7 @@ public final class Config {
     private  String scopeName;
     private  String collectionName;
     private int testDuration;
-    private int getCount;
+    private int numerOfTestRuns;
 
     private Config() {
         try (InputStream input = BeerFast.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
@@ -46,7 +45,7 @@ public final class Config {
             outputFileName = Config.prop.getProperty("default.output","output.csv");
             dataFolderName = Config.prop.getProperty("default.dataFolder",".\\Data");
             testDuration = Integer.parseInt(Config.prop.getProperty("test.duration"));
-            getCount = Integer.parseInt(Config.prop.getProperty("test.getCount"));
+            numerOfTestRuns = Integer.parseInt(Config.prop.getProperty("test.getCount"));
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -103,8 +102,8 @@ public final class Config {
         return testDuration;
     }
 
-    public int getGetCount() {
-        return getCount;
+    public int getNumerOfTestRuns() {
+        return numerOfTestRuns;
     }
 
     public void setNumOfThreads(int numOfThreads) {
