@@ -57,7 +57,7 @@ public class BeerFast {
             // Perform tests over specific period
             int testDuration = config.getTestDuration();
             try {
-                for (int i = 0; i < testDuration; i++) {
+                for (int i = 0; i <= testDuration; i++) {
                     TimeUnit.SECONDS.sleep(1);
                     System.out.printf("\r Seconds to complete %d.", testDuration - i );
                 }
@@ -66,7 +66,7 @@ public class BeerFast {
                 System.out.println("Thread was interrupted.");
             }
             System.out.print("\n" );
-            System.out.println("Stopping all workers..." );
+            System.out.print("Stopping all workers..." );
 
             // stopping tests for each worker
             for (int i = 0; i < numOfThreads; i++) {
@@ -76,19 +76,19 @@ public class BeerFast {
             for (int i = 0; i < numOfThreads; i++) {
                 stopSemaphore.acquire();
             }
-            System.out.println("All workers have finished.");
+            System.out.println("all workers have finished.");
 
-            connection.disconnect();
 
-            System.out.println("Saving results.");
-            List<ReportIfc> results = new ArrayList<ReportIfc>();
+            System.out.println("Saving results...");
+            List<ReportIfc> results = new ArrayList<>();
             for (int i = 0; i < numOfThreads; i++) {
                  results.add(mules[i].getResult());
              }
-
             ReportWriter.writeReportCSV(config.getOutputFileName(), results);
 
-            System.out.println("Done.");
+            connection.disconnect();
+
+            System.out.println("==[Done]==");
 
     }
 

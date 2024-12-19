@@ -10,12 +10,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.javatuples.Pair;
 import org.json.JSONObject;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.Semaphore;
-
 
 class BeerMule extends Thread implements MuleIfc {
 
@@ -43,9 +41,7 @@ class BeerMule extends Thread implements MuleIfc {
         try {
             startSemaphore.acquire();
             logger.info("Mule " + id + " started.");
-            // report.setStartTime(System.currentTimeMillis());
             executeTest(config.getDataFolderName(), config.getNumerOfTestRuns());
-            // report.setEndTime(System.currentTimeMillis());
             logger.info("Mule " + id + " finished work in " + (report.getEndTime() - report.getStartTime()) / 1000 + "s ");
             stopSemaphore.release();
         } catch (InterruptedException e) {
@@ -63,7 +59,6 @@ class BeerMule extends Thread implements MuleIfc {
         return report;
     }
 
-
     /**
      * Runs tests reading each .json file from folderPath
      * uploading to CouchBase, then retrieving it getCount times
@@ -75,11 +70,11 @@ class BeerMule extends Thread implements MuleIfc {
     private void executeTest(String folderPath, int getCount) {
 
         File folder = new File(folderPath);
-        long numberOfRuns = 0;
-        long filesRead = 0;
-        long documentCalls = 0;
-        long loadDuration = 0;
-        long getResultDuration = 0;
+        int numberOfRuns = 0;
+        int filesRead = 0;
+        int documentCalls = 0;
+        int loadDuration = 0;
+        int getResultDuration = 0;
         long dataVolume = 0;
 
         report.setStartTime(System.currentTimeMillis());
@@ -96,12 +91,11 @@ class BeerMule extends Thread implements MuleIfc {
 
                             long startT = System.currentTimeMillis();
                             Pair<String, Long> r;
-                            r = uploadDocument(collection, file);
+                            r = uploadDocument(collection, file, this.id, filesRead);
                             String docID = r.getValue0();
-                            dataVolume = dataVolume + r.getValue1();
-                            filesRead++;
 
                             if (!docID.isEmpty()) {
+                                dataVolume = dataVolume + r.getValue1();
                                 filesRead++;
                                 long loadT = System.currentTimeMillis();
 
@@ -110,14 +104,11 @@ class BeerMule extends Thread implements MuleIfc {
                                         break;
                                     }
                                     documentCalls++;
-                                    //
                                     collection.get(docID);
                                 }
                                 long endT = System.currentTimeMillis();
-
                                 loadDuration += (loadT - startT);
                                 getResultDuration += (endT - loadT);
-
                             }
                             numberOfRuns++;
 
@@ -142,6 +133,7 @@ class BeerMule extends Thread implements MuleIfc {
         report.setDocumentCalls(documentCalls);
         report.setLoadDuration(loadDuration);
         report.setGetResultDuration(getResultDuration);
+        report.setDataVolume(dataVolume);
 
         logger.info("Mule" + id + " Run:" + numberOfRuns + " times, " +
                 "Loaded:" + filesRead + " files, " + dataVolume + " bytes, in " + loadDuration + "ms " +
@@ -157,7 +149,7 @@ class BeerMule extends Thread implements MuleIfc {
     }
 
 
-    public static Pair<String, Long> uploadDocument(Collection collection, File file) {
+    private static Pair<String, Long> uploadDocument(Collection collection, File file, int muleId, int fileId) {
 
         String docID = "";
         long dataVolume = 0;
@@ -166,7 +158,7 @@ class BeerMule extends Thread implements MuleIfc {
             String content = new String(Files.readAllBytes(Paths.get(file.getPath())));
             dataVolume = content.length();
             JsonObject jsonObject = convertToCouchbaseJsonObject(new JSONObject(content));
-            // MutationResult upsertResult =
+            docID = getDocId(muleId,fileId);
             collection.upsert(
                     docID, jsonObject
             );
@@ -175,6 +167,10 @@ class BeerMule extends Thread implements MuleIfc {
         }
 
         return Pair.with(docID, dataVolume);
+    }
+
+    private static String getDocId(long muleId, int fileId){
+        return String.format("%1$06X:%2$010d", muleId, fileId);
     }
 
 }

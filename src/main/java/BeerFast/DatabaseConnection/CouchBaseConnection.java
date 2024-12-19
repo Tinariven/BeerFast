@@ -21,9 +21,9 @@ public class CouchBaseConnection implements DatabaseConnectionIfc{
 
     /**
      * Connects to Couchbase Cluster using connection string, username and password
-     * @param connectionString
-     * @param username
-     * @param password
+     * @param connectionString - couchbase connection url
+     * @param username - user name
+     * @param password - user password
      * @throws CouchbaseException
      */
 
@@ -60,6 +60,7 @@ public class CouchBaseConnection implements DatabaseConnectionIfc{
         return instance;
     }
 
+    @Override
     public Collection getConnection() {
         return this.collection;
     }
