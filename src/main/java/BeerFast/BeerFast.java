@@ -2,6 +2,8 @@ package BeerFast;
 
 import BeerFast.Config.Config;
 import BeerFast.DatabaseConnection.CouchBaseConnection;
+import BeerFast.Mule.BeerMuleFactory;
+import BeerFast.Mule.MuleIfc;
 import BeerFast.Report.ReportIfc;
 import BeerFast.Report.ReportWriter;
 import org.apache.logging.log4j.LogManager;
@@ -43,9 +45,10 @@ public class BeerFast {
 
             // Array of workers and their outcome
             MuleIfc[] mules = new MuleIfc[numOfThreads];
+            BeerMuleFactory beerMuleFactory = new BeerMuleFactory(startSemaphore, stopSemaphore);
 
             for (int i = 0; i <  numOfThreads; i++) {
-                mules[i] = new BeerMule(i, connection.getConnection(), config, startSemaphore, stopSemaphore );
+                mules[i] = beerMuleFactory.createMule(startSemaphore, stopSemaphore, i, connection.getConnection(), config );
                 mules[i].start();
             }
 
@@ -72,13 +75,11 @@ public class BeerFast {
             for (int i = 0; i < numOfThreads; i++) {
                 mules[i].stopRunning();
             }
-
+            // sync that all workers completed task
             for (int i = 0; i < numOfThreads; i++) {
                 stopSemaphore.acquire();
             }
             System.out.println("all workers have finished.");
-
-
             System.out.println("Saving results...");
             List<ReportIfc> results = new ArrayList<>();
             for (int i = 0; i < numOfThreads; i++) {

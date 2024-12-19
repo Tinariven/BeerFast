@@ -5,7 +5,7 @@
     <option name="PROGRAM_PARAMETERS" value="100 output100.csv .\Data\Data2" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="BeerFast.*" />
+        <option name="PATTERN" value="BeerFast.Mule.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

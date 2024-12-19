@@ -1,4 +1,4 @@
-package BeerFast;
+package BeerFast.Mule;
 
 import BeerFast.Config.Config;
 import BeerFast.Report.BeerReport;
@@ -27,7 +27,7 @@ class BeerMule extends Thread implements MuleIfc {
 
     private final BeerReport report;
 
-    public BeerMule(int id, Collection collection, Config config, Semaphore startSemaphore, Semaphore stopSemaphore) {
+    public BeerMule( Semaphore startSemaphore, Semaphore stopSemaphore, int id, Collection collection, Config config) {
         this.id = id;
         this.startSemaphore = startSemaphore;
         this.stopSemaphore = stopSemaphore;
@@ -50,10 +50,16 @@ class BeerMule extends Thread implements MuleIfc {
         }
     }
 
+    /**
+     * Forces Mule to stop working - switch isRunning flag
+     */
     public void stopRunning() {
         isRunning = false;
     }
 
+    /**
+     * Returns collected test results as Report
+     */
     @Override
     public ReportIfc getResult() {
         return report;
@@ -149,6 +155,14 @@ class BeerMule extends Thread implements MuleIfc {
     }
 
 
+    /**
+     * Uploads file contents into Couchbase collection, under identifier created based on muleId and fileId
+     * @param collection - couchbase collection connector
+     * @param file - input file
+     * @param muleId - Mule identifier
+     * @param fileId - File identifier
+     * @return - returns uploaded file internal identifier and size of the file
+     */
     private static Pair<String, Long> uploadDocument(Collection collection, File file, int muleId, int fileId) {
 
         String docID = "";
@@ -169,6 +183,12 @@ class BeerMule extends Thread implements MuleIfc {
         return Pair.with(docID, dataVolume);
     }
 
+    /**
+     * Generates identifier based on muleId and fileId
+     * @param muleId - worker number
+     * @param fileId - file number
+     * @return - formatted string
+     */
     private static String getDocId(long muleId, int fileId){
         return String.format("%1$06X:%2$010d", muleId, fileId);
     }

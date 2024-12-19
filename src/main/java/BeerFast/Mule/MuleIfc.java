@@ -1,4 +1,4 @@
-package BeerFast;
+package BeerFast.Mule;
 
 import BeerFast.Report.ReportIfc;
 
@@ -9,4 +9,5 @@ public interface MuleIfc {
     ReportIfc getResult();
 
     void start();
+
 }

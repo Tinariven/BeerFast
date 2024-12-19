@@ -2,10 +2,10 @@
   <configuration default="false" name="BeerFast10" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="BeerFast.BeerFast" />
     <module name="BeerFast" />
-    <option name="PROGRAM_PARAMETERS" value="10 output10.csv .\Data\Data2" />
+    <option name="PROGRAM_PARAMETERS" value="10 output10.csv .\Data" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="BeerFast.*" />
+        <option name="PATTERN" value="BeerFast.Mule.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

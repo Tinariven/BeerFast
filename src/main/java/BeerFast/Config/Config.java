@@ -48,6 +48,7 @@ public final class Config {
             numerOfTestRuns = Integer.parseInt(Config.prop.getProperty("test.getCount"));
 
         } catch (Exception ex) {
+            logger.error(ex.getMessage());
             ex.printStackTrace();
         }
     }
